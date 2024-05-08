@@ -45,6 +45,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # django的md编辑器插件
+    'mdeditor',
+    # 实现全文搜索功能
+    # 'haystack',
+    'blog',
 ]
 
 MIDDLEWARE = [
@@ -124,7 +129,7 @@ LANGUAGE_CODE = 'zh-hans'
 
 TIME_ZONE = 'Asia/Shanghai'
 
-USE_I18N = True
+USE_I18N = True # 国际化配置开，目前只知道可以用于更换语言
 
 USE_L10N = True
 
