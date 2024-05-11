@@ -10,6 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from mdeditor.fields import MDTextField
 from uuslug import slugify # 用于管理url
 
+from DjangoBlog.utils import cache_decorator, cache, get_current_site
+
 logger = logging.getLogger(__name__)
 
 # Create your models here.
@@ -58,3 +60,222 @@ class BaseModel(models.Model):
     @abstractmethod
     def get_absolute_url(self):
         pass
+
+
+class Article(BaseModel):
+    """文章"""
+    STATUS_CHOICES = (
+        ('d', _('Draft')),
+        ('p', _('Published')),
+    )
+    COMMENT_STATUS = (
+        ('o', _('Open')),
+        ('c', _('Close')),
+    )
+    TYPE = (
+        ('a', _('Article')),
+        ('p', _('Page')),
+    )
+    title = models.CharField(_('title'), max_length=200, unique=True)
+    body = MDTextField(_('body'))
+    pub_time = models.DateTimeField(
+        _('publish time'), blank=False, null=False, default=now)
+    status = models.CharField(
+        _('status'),
+        max_length=1,
+        choices=STATUS_CHOICES,
+        default='p')
+    comment_status = models.CharField(
+        _('comment status'),
+        max_length=1,
+        choices=COMMENT_STATUS,
+        default='o')
+    type = models.CharField(_('type'), max_length=1, choices=TYPE, default='a')
+    views = models.PositiveIntegerField(_('views'), default=0)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_('author'),
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE)
+    article_order = models.IntegerField(
+        _('order'), blank=False, null=False, default=0)
+    show_toc = models.BooleanField(_('show toc'), blank=False, null=False, default=False)
+    category = models.ForeignKey(
+        'Category',
+        verbose_name=_('category'),
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False)
+    tags = models.ManyToManyField('Tag', verbose_name=_('tag'), blank=True)
+
+    def body_to_string(self):
+        return self.body
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['-article_order', '-pub_time']
+        verbose_name = _('article')
+        verbose_name_plural = verbose_name
+        get_latest_by = 'id'
+
+    def get_absolute_url(self):
+        return reverse('blog:detailbyid', kwargs={
+            'article_id': self.id,
+            'year': self.creation_time.year,
+            'month': self.creation_time.month,
+            'day': self.creation_time.day
+        })
+
+    @cache_decorator(60 * 60 * 10)
+    def get_category_tree(self):
+        tree = self.category.get_category_tree()
+        names = list(map(lambda c: (c.name, c.get_absolute_url()), tree))
+
+        return names
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    def viewed(self):
+        self.views += 1
+        self.save(update_fields=['views'])
+
+    def comment_list(self):
+        cache_key = 'article_comments_{id}'.format(id=self.id)
+        value = cache.get(cache_key)
+        if value:
+            logger.info('get article comments:{id}'.format(id=self.id))
+            return value
+        else:
+            comments = self.comment_set.filter(is_enable=True).order_by('-id')
+            cache.set(cache_key, comments, 60 * 100)
+            logger.info('set article comments:{id}'.format(id=self.id))
+            return comments
+
+    def get_admin_url(self):
+        info = (self._meta.app_label, self._meta.model_name)
+        return reverse('admin:%s_%s_change' % info, args=(self.pk,))
+
+    @cache_decorator(expiration=60 * 100)
+    def next_article(self):
+        # 下一篇
+        return Article.objects.filter(
+            id__gt=self.id, status='p').order_by('id').first()
+
+    @cache_decorator(expiration=60 * 100)
+    def prev_article(self):
+        # 前一篇
+        return Article.objects.filter(id__lt=self.id, status='p').first()
+
+
+class Category(BaseModel):
+    """文章分类"""
+    name = models.CharField(_('category name'), max_length=30, unique=True)
+    parent_category = models.ForeignKey(
+        'self',
+        verbose_name=_('parent category'),
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE)
+    slug = models.SlugField(default='no-slug', max_length=60, blank=True)
+    index = models.IntegerField(default=0, verbose_name=_('index'))
+
+    class Meta:
+        ordering = ['-index']
+        verbose_name = _('category')
+        verbose_name_plural = verbose_name
+
+    def get_absolute_url(self):
+        return reverse(
+            'blog:category_detail', kwargs={
+                'category_name': self.slug})
+
+    def __str__(self):
+        return self.name
+
+    @cache_decorator(60 * 60 * 10)
+    def get_category_tree(self):
+        """
+        递归获得分类目录的父级
+        :return:
+        """
+        categorys = []
+
+        def parse(category):
+            categorys.append(category)
+            if category.parent_category:
+                parse(category.parent_category)
+
+        parse(self)
+        return categorys
+
+    @cache_decorator(60 * 60 * 10)
+    def get_sub_categorys(self):
+        """
+        获得当前分类目录所有子集
+        :return:
+        """
+        categorys = []
+        all_categorys = Category.objects.all()
+
+        def parse(category):
+            if category not in categorys:
+                categorys.append(category)
+            childs = all_categorys.filter(parent_category=category)
+            for child in childs:
+                if category not in categorys:
+                    categorys.append(child)
+                parse(child)
+
+        parse(self)
+        return categorys
+
+
+class Tag(BaseModel):
+    """文章标签"""
+    name = models.CharField(_('tag name'), max_length=30, unique=True)
+    slug = models.SlugField(default='no-slug', max_length=60, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('blog:tag_detail', kwargs={'tag_name': self.slug})
+
+    @cache_decorator(60 * 60 * 10)
+    def get_article_count(self):
+        return Article.objects.filter(tags__name=self.name).distinct().count()
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = _('tag')
+        verbose_name_plural = verbose_name
+
+
+class Links(models.Model):
+    """友情链接"""
+
+    name = models.CharField(_('link name'), max_length=30, unique=True)
+    link = models.URLField(_('link'))
+    sequence = models.IntegerField(_('order'), unique=True)
+    is_enable = models.BooleanField(
+        _('is show'), default=True, blank=False, null=False)
+    show_type = models.CharField(
+        _('show type'),
+        max_length=1,
+        choices=LinkShowType.choices,
+        default=LinkShowType.I)
+    creation_time = models.DateTimeField(_('creation time'), default=now)
+    last_mod_time = models.DateTimeField(_('modify time'), default=now)
+
+    class Meta:
+        ordering = ['sequence']
+        verbose_name = _('link')
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.name
+

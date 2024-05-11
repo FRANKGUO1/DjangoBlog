@@ -1,9 +1,11 @@
 from django.urls import path
 from django.views.decorators.cache import cache_page
 
-import views
+from . import views
 
 app_name = "blog"
 urlpatterns = [
-    path(r'', views.IndexView.as_view(), name='index'),
+    path(r'', 
+         views.IndexView.as_view(), 
+         name='index'),
 ]

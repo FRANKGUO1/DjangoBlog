@@ -39,12 +39,13 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    'django.contrib.admin.apps.SimpleAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     # django的md编辑器插件
     'mdeditor',
     # 实现全文搜索功能
@@ -84,7 +85,10 @@ TEMPLATES = [
                 # 自定义的上下文处理器
                 # 'blog.context_processors.seo_processor'
             ],
-        },
+            'libraries': {
+            'blog-tags': 'blog.templatetags.blog_tags.py'
+        }
+        },     
     },
 ]
 
@@ -102,6 +106,19 @@ DATABASES = {
     }
 }
 """
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DJANGO_MYSQL_DATABASE') or 'djangoblog',
+        'USER': os.environ.get('DJANGO_MYSQL_USER') or 'root',
+        'PASSWORD': os.environ.get('DJANGO_MYSQL_PASSWORD') or '123456',
+        'HOST': os.environ.get('DJANGO_MYSQL_HOST') or '127.0.0.1',
+        'PORT': int(
+            os.environ.get('DJANGO_MYSQL_PORT') or 3306),
+        'OPTIONS': {
+            'charset': 'utf8mb4'},
+    }}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -145,3 +162,8 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SITE_ID = 1
+
+# paginate
+PAGINATE_BY = 10
