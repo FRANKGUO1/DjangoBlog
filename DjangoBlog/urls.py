@@ -16,11 +16,13 @@ Including another URLconf
 """
 from django.conf.urls.i18n import i18n_patterns
 from django.urls import path, include, re_path
+from django.conf import settings
 
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
 ]
 
 urlpatterns += i18n_patterns(
-    re_path(r'', include('blog.urls', namespace='blog')),) # 凡是空字符串开头的url，将这些url匹配到blog,urls下
+    # re_path(r'', include('blog.urls', namespace='blog')), # 凡是空字符串开头的url，将这些url匹配到blog.urls下
+    re_path(r'', include('accounts.urls', namespace='account')),)   # 凡是空字符串开头的url，将这些url匹配到blog.urls下
 

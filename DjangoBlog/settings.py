@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'mdeditor',
     # 实现全文搜索功能
     # 'haystack',
-    'blog',
+    'accounts'
 ]
 
 MIDDLEWARE = [
@@ -86,7 +86,7 @@ TEMPLATES = [
                 # 'blog.context_processors.seo_processor'
             ],
             'libraries': {
-            'blog-tags': 'blog.templatetags.blog_tags.py'
+            # 'blog-tags': 'blog.templatetags.blog_tags.py'
         }
         },     
     },
@@ -148,7 +148,7 @@ TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True # 国际化配置开，目前只知道可以用于更换语言
 
-USE_L10N = True
+USE_L10N = True # 用于本地化，翻译文件生成在locale上
 
 USE_TZ = True
 

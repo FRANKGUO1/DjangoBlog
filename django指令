@@ -1,0 +1,66 @@
+在 Django 中，添加应用程序（app）以及执行其它常用管理任务可以使用 `manage.py` 脚本。以下是一些常见的指令：
+
+### 添加应用程序
+
+1. **创建新应用程序**：
+    ```sh
+    python manage.py startapp <app_name>
+    ```
+
+    例如：
+    ```sh
+    python manage.py startapp blog
+    ```
+
+2. **在项目中注册应用程序**：
+    打开项目的 `settings.py` 文件，找到 `INSTALLED_APPS` 列表，将新应用程序添加到其中：
+    ```python
+    INSTALLED_APPS = [
+        ...
+        'blog',
+    ]
+    ```
+
+### 其它常用管理指令
+
+1. **运行开发服务器**：
+    ```sh
+    python manage.py runserver
+    ```
+
+2. **创建数据库迁移文件**：
+    ```sh
+    python manage.py makemigrations
+    ```
+
+3. **应用数据库迁移**：
+    ```sh
+    python manage.py migrate
+    ```
+
+4. **创建超级用户**：
+    ```sh
+    python manage.py createsuperuser
+    ```
+
+5. **启动 Django shell**：
+    ```sh
+    python manage.py shell
+    ```
+
+6. **收集静态文件**：
+    ```sh
+    python manage.py collectstatic
+    ```
+
+7. **检查项目错误**：
+    ```sh
+    python manage.py check
+    ```
+
+8. **运行测试**：
+    ```sh
+    python manage.py test
+    ```
+
+这些指令帮助你在开发和部署 Django 项目时高效地管理应用程序和项目配置。
