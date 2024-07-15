@@ -31,9 +31,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-7f1)@%9vw0^qf=p6yvqzs2kji5j2^=ppomrl3%xnyo55ce&rip'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', '127.0.0.1', 'example.com']
+# django 4.0新增配置
+CSRF_TRUSTED_ORIGINS = ['http://example.com']
+
+# settings.py
+AUTH_USER_MODEL = 'accounts.BlogUser'
+
 
 
 # Application definition
@@ -111,7 +118,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DJANGO_MYSQL_DATABASE') or 'djangoblog',
         'USER': os.environ.get('DJANGO_MYSQL_USER') or 'root',
-        'PASSWORD': os.environ.get('DJANGO_MYSQL_PASSWORD') or '123456',
+        'PASSWORD': os.environ.get('DJANGO_MYSQL_PASSWORD') or '',
         'HOST': os.environ.get('DJANGO_MYSQL_HOST') or '127.0.0.1',
         'PORT': int(
             os.environ.get('DJANGO_MYSQL_PORT') or 3306),
