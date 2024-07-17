@@ -67,4 +67,12 @@ def get_current_site():
     return site
 
 
+def delete_sidebar_cache():
+    from blog.models import LinkShowType
+    keys = ["sidebar" + x for x in LinkShowType.values]
+    for k in keys:
+        logger.info('delete sidebar key:' + k)
+        cache.delete(k)
+
+
 
